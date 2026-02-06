@@ -32,13 +32,13 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        console.log(`📦 Received audio file: ${audioFile.name}, size: ${audioFile.size} bytes, type: ${audioFile.type}`);
+        console.log(` Received audio file: ${audioFile.name}, size: ${audioFile.size} bytes, type: ${audioFile.type}`);
 
         // Convert File to Blob
         const arrayBuffer = await audioFile.arrayBuffer();
         const audioBlob = new Blob([arrayBuffer], { type: audioFile.type || 'audio/webm' });
 
-        console.log('🎙️ Calling ElevenLabs speechToText.convert()...');
+        console.log(' Calling ElevenLabs speechToText.convert()...');
 
         const transcription = await getClient().speechToText.convert({
             file: audioBlob,
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
             diarize: true,
         });
 
-        console.log('✅ Transcription successful:', JSON.stringify(transcription, null, 2));
+        console.log(' Transcription successful:', JSON.stringify(transcription, null, 2));
 
         // Handle different response structures
         let transcribedText = '';
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
                 .join(' ');
         }
 
-        console.log('📝 Extracted text:', transcribedText);
+        console.log(' Extracted text:', transcribedText);
 
         return NextResponse.json({
             text: transcribedText,
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error) {
-        console.error('❌ Transcription error:', error);
+        console.error('Transcription error:', error);
 
         // Log detailed error info
         if (error instanceof Error) {

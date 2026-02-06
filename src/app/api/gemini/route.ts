@@ -6,20 +6,19 @@ import { MetricsCollector } from '@/lib/datadog-metrics';
 import { generateEmbedding, chunkText } from '@/lib/rag';
 import { searchSimilarChunks } from '@/lib/firestore';
 
-// Force dynamic rendering - don't try to build this route statically
+
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-    const requestStartTime = Date.now(); // 📊 START TIMER
-
+    const requestStartTime = Date.now(); // 
     return tracer.trace('gemini.request', async (span) => {
         let body: any = {};
         try {
             body = await req.json();
             const { history, query, context, filename, persona, expressiveMode, forceError } = body;
 
-            // ✅ Log the filename
-            console.log('[API/Gemini] 📥 Received Request:', {
+
+            console.log('[API/Gemini]  Received Request:', {
                 queryPreview: query?.substring(0, 50),
                 filename,
                 persona,
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
                 hasContext: !!context
             });
 
-            // 🏷️ Tag synthetic traffic
+            
             const trafficSource = req.headers.get('x-voicedoc-traffic') || 'user';
             const scenario = req.headers.get('x-voicedoc-scenario') || 'normal';
             span?.setTag('traffic.type', trafficSource);
@@ -41,16 +40,16 @@ export async function POST(req: NextRequest) {
             span?.setTag('llm.expressive_mode', expressiveMode);
             span?.setTag('voice_mode', voice_mode);
 
-            // ⚡ Check for narration early
+            
             const isNarrationRequest = /^(read|narrate|tell me|recite|play|start|begin|chapter|section)/i.test(query);
 
-            // 📊 RECORD HIT AT THE START
+            
             await MetricsCollector.recordHit(voice_mode, isNarrationRequest, trafficSource);
             await MetricsCollector.recordPersona(persona || 'narrative', trafficSource);
 
-            // 💥 Deterministic error for Datadog Monitors/Runbooks demo
+
             if (forceError) {
-                console.error('[API/Gemini] 💥 Forced synthetic error triggered');
+                console.error('[API/Gemini] Forced synthetic error triggered');
                 MetricsCollector.recordError('forced_error', voice_mode, trafficSource);
                 throw new Error('Synthetic Gemini failure for Datadog demo');
             }
@@ -65,7 +64,7 @@ export async function POST(req: NextRequest) {
             let augmentedContext = context || '';
 
             try {
-                console.log('[RAG] 🔍 Starting RAG retrieval...');
+                console.log('[RAG] Starting RAG retrieval...');
                 span?.setTag('rag.enabled', true);
 
                 const queryEmbedding = await generateEmbedding(query);
@@ -78,15 +77,14 @@ export async function POST(req: NextRequest) {
                     augmentedContext += `\n\nRelevant Document Excerpts:\n${retrievedText}`;
                 }
             } catch (e: any) {
-                console.warn('[RAG] ⚠️ RAG retrieval failed:', e);
+                console.warn('[RAG] RAG retrieval failed:', e);
                 span?.setTag('rag.error', e.message);
             }
 
-            // Create a streaming response
             const encoder = new TextEncoder();
             const stream = new ReadableStream({
                 async start(controller) {
-                    const generatorStartTime = Date.now(); // 📊 START TIMER
+                    const generatorStartTime = Date.now(); 
                     let hasError = false;
 
                     try {
@@ -103,7 +101,7 @@ export async function POST(req: NextRequest) {
                                     if (trimmed) {
                                         if (!firstTokenSent) {
                                             const ttft = Date.now() - generatorStartTime;
-                                            console.log(`[API] 🚀 First token received! TTFT: ${ttft}ms`);
+                                            console.log(`[API]  First token received! TTFT: ${ttft}ms`);
                                             MetricsCollector.recordTTFT(ttft, voice_mode, isNarrationRequest, trafficSource);
                                             firstTokenSent = true;
                                         }
@@ -113,7 +111,7 @@ export async function POST(req: NextRequest) {
                                     }
                                 }
                             } catch (enqueueErr) {
-                                console.error('[Stream] ❌ Error enqueuing chunk:', enqueueErr);
+                                console.error('[Stream]  Error enqueuing chunk:', enqueueErr);
                                 hasError = true;
                                 break;
                             }
@@ -122,12 +120,12 @@ export async function POST(req: NextRequest) {
                         span?.setTag('llm.chunks', chunkCount);
                         span?.setTag('llm.response_length', totalText.length);
 
-                        // 📊 RECORD METRICS AT THE END (duration measured inside generator)
+                        
                         const duration = Date.now() - generatorStartTime;
                         await MetricsCollector.recordSuccess(voice_mode, trafficSource);
                         await MetricsCollector.recordRequestDuration(duration, voice_mode, isNarrationRequest, trafficSource);
                         await MetricsCollector.recordResponseLength(totalText.length, voice_mode, trafficSource);
-                        console.log(`[API] ✅ Request completed in ${duration}ms`);
+                        console.log(`[API] Request completed in ${duration}ms`);
 
                         controller.close();
 
@@ -136,7 +134,6 @@ export async function POST(req: NextRequest) {
                         span?.setTag('error', true);
                         span?.setTag('error.message', generatorError.message);
 
-                        // 📊 RECORD ERROR
                         const duration = Date.now() - generatorStartTime;
                         await MetricsCollector.recordError('generator_error', voice_mode, trafficSource);
                         await MetricsCollector.recordRequestDuration(duration, voice_mode, isNarrationRequest, trafficSource);
@@ -156,11 +153,10 @@ export async function POST(req: NextRequest) {
             });
 
         } catch (error: any) {
-            console.error('[Route] ❌ Fatal error:', error);
+            console.error('[Route]  Fatal error:', error);
             span?.setTag('error', true);
             span?.setTag('error.message', error.message);
 
-            // 📊 RECORD ERROR METRIC
             const trafficSource = req.headers.get('x-voicedoc-traffic') || 'user';
             const voice_mode = body?.expressiveMode ? 'expressive' : 'standard';
             const duration = Date.now() - requestStartTime;

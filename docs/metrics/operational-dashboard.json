@@ -1,6 +1,6 @@
 {
-    "title": "VoiceDoc Agent - Health & LLM Observability",
-    "description": "Real-time monitoring of VoiceDoc Agent performance, costs, and LLM usage.",
+    "title": "Aerovoice Agent LLM fro all healh",
+    "description": "Realistic Monitoring of Agent performance, costs, and LLM usage.",
     "widgets": [
         {
             "definition": {

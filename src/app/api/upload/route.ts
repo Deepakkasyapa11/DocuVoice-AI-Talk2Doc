@@ -5,10 +5,8 @@ import { chunkText, generateEmbedding } from '@/lib/rag';
 import { saveChunks, Chunk, getDocumentByHash, saveDocumentMetadata } from '@/lib/firestore';
 import crypto from 'crypto';
 
-// Force dynamic rendering - don't try to build this route statically
 export const dynamic = 'force-dynamic';
 
-// Polyfills for pdf-parse in server environment
 if (typeof Promise.withResolvers === 'undefined') {
     // @ts-ignore
     Promise.withResolvers = function () {
@@ -52,9 +50,6 @@ if (!global.Path2D) {
 const pdf = require('pdf-parse');
 
 
-// Disable body parser generally handled by Next.js for FormData, but good to know
-// Next.js App Router handles FormData automatically
-
 export async function POST(req: NextRequest) {
     return tracer.trace('api.upload', async (span) => {
         try {
@@ -75,13 +70,13 @@ export async function POST(req: NextRequest) {
 
             // 1. Calculate Hash for Deduplication
             const hash = crypto.createHash('sha256').update(buffer).digest('hex');
-            console.log(`📄 Processing file: ${file.name} | Hash: ${hash.substring(0, 8)}...`);
+            console.log(` Processing file: ${file.name} | Hash: ${hash.substring(0, 8)}...`);
             span?.setTag('file.hash', hash);
 
             // 2. Check for Duplicate
             const existingDoc = await getDocumentByHash(hash);
             if (existingDoc) {
-                console.log(`✨ Duplicate detected! Skipping ingestion for ${file.name}`);
+                console.log(` Duplicate detected! Skipping ingestion for ${file.name}`);
                 span?.setTag('upload.duplicate', true);
                 return NextResponse.json({
                     filename: existingDoc.filename,
@@ -104,12 +99,12 @@ export async function POST(req: NextRequest) {
                 span?.setTag('file.is_pdf', false);
             }
 
-            // 🏷️ Tag traffic type
+           
             const trafficSource = req.headers.get('x-voicedoc-traffic') || 'user';
             span?.setTag('traffic.type', trafficSource);
 
             const persona = await getClassifiedPersona(text, trafficSource);
-            console.log(`📄 Document Classification - File: ${file.name} | Detected Persona: ${persona} | Traffic: ${trafficSource}`);
+            console.log(`Document Classification - File: ${file.name} | Detected Persona: ${persona} | Traffic: ${trafficSource}`);
             span?.setTag('file.persona', persona);
 
             // RAG Ingestion Process

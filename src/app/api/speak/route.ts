@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         const {
             text,
             persona,
-            expressiveMode = false,   // 🔑 mirrors Gemini pipeline
+            expressiveMode = false,   
         }: {
             text: string;
             persona?: Persona;
@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
 
         const voiceId = getVoiceIdForPersona(persona as Persona);
 
-        // 🎭 Model selection
         const modelId = expressiveMode
             ? 'eleven_v3'
             : 'eleven_flash_v2_5';
@@ -46,13 +45,13 @@ export async function POST(req: NextRequest) {
 
         const finalExpressiveMode = inferredExpressive;
 
-        // 🧹 Strip emotion tags in standard mode
+        //  Strip emotion tags in standard mode
         const processedText = finalExpressiveMode
             ? text
             : text.replace(/\[[^\]]*?\]/g, '').trim();
 
         console.log(
-            `🎙️ TTS Request | Persona: ${persona || 'narrative'} | ` +
+            ` TTS Request | Persona: ${persona || 'narrative'} | ` +
             `Mode: ${expressiveMode ? 'expressive' : 'standard'} | ` +
             `Model: ${modelId} | VoiceID: ${voiceId}`
         );
@@ -70,7 +69,7 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error('❌ TTS Error:', {
+        console.error(' TTS Error:', {
             message: error.message,
             statusCode: error.statusCode,
             body: error.body,
